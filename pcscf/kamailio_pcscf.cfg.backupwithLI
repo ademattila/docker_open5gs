@@ -1,3 +1,4 @@
+adem@ecomm:~/docker_open5gs$ cat pcscf/kamailio_pcscf.cfg
 #
 # TelcoSuite (V3) Proxy-CSCF + Lawful Intercept
 #
@@ -348,13 +349,58 @@ modparam("rtimer", "exec", "timer=LI_SYNC;route=LI_SYNC")
 
 ####### Routing Logic ########
 
+route[LI_SYNC] {
+    sql_query("lidb", "SELECT phone_number, imsi FROM li_watchlist WHERE active=1", "wl");
+    if ($dbr(wl=>rows) > 0) {
+        $var(i) = 0;
+        while ($var(i) < $dbr(wl=>rows)) {
+            if ($dbr(wl=>[$var(i),0]) != $null) {
+                $sht(li_watchlist=>$dbr(wl=>[$var(i),0])) = 1;
+            }
+            if ($dbr(wl=>[$var(i),1]) != $null) {
+                $sht(li_watchlist=>$dbr(wl=>[$var(i),1])) = 1;
+            }
+            $var(i) = $var(i) + 1;
+        }
+        xlog("L_ALERT", "▒~V~R~V~R~V~R~\~E LI: Synced $dbr(wl=>rows) targets\n");
+    }
+    sql_result_free("wl");
+}
+
+
+route[LI_CHECK] {
+    if (!is_method("INVITE")) return;
+
+    if ($sht(li_watchlist=>$fU) != $null) {
+        xlog("L_ALERT", "▒~V~R~V~R~_~Z▒~V~R~V~R LI TARGET CALLER: $fU, Call-ID: $ci\n");
+        setflag(22);
+    }
+
+    if ($sht(li_watchlist=>$tU) != $null) {
+        xlog("L_ALERT", "▒~V~R~V~R~_~Z▒~V~R~V~R LI TARGET CALLEE: $tU, Call-ID: $ci\n");
+        setflag(22);
+    }
+
+    if (isflagset(22)) {
+        xlog("L_ALERT", "▒~V~R~V~R~_~T▒~V~R~V~R LI RECORDING ACTIVATED: Call-ID=$ci, $fU▒~V~R~V~R~F~R$tU\n");
+        rtpengine_manage("record-call=yes");
+    }
+}
+
 
 route {
     ##!ifdef WITH_DEBUG
     xnotice("PCSCF: $rm $ru ($fu ($si:$sp) to $tu, $ci)\n");
     ##!endif
 
+    # Per request initial checks
     route(REQINIT);
+
+    # ========== LAWFUL INTERCEPT CHECK ==========
+    route(LI_CHECK);
+    # ============================================
+
+
 
 #!ifdef WITH_WEBSOCKET
     if (($Rp == MY_WS_PORT || $Rp == MY_WSS_PORT) && !(proto == WS || proto == WSS)) {
@@ -626,6 +672,10 @@ route[NRF_NFM] {
     }
 }
 #!endif
+
+
+
+# =================================================================
 
 #!ifdef WITH_XMLRPC
 include_file "route/xmlrpc.cfg"

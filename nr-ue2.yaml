@@ -1,7 +1,7 @@
 services:
-  nr_ue:
+  nr_ue2:
     image: docker_ueransim
-    container_name: nr_ue
+    container_name: nr_ue2
     privileged: true
     stdin_open: true
     tty: true
@@ -12,14 +12,14 @@ services:
     env_file:
       - .env
     environment:
-      - COMPONENT_NAME=ueransim-ue
+      - COMPONENT_NAME=ueransim-ue2
     expose:
       - "4997/udp"
     cap_add:
       - NET_ADMIN
     networks:
       default:
-        ipv4_address: ${NR_UE_IP}
+        ipv4_address: ${NR_UE2_IP}
 networks:
   default:
     external: true

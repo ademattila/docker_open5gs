@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<scenario name="INVITE with RTP TCP">
+  <send retrans="500">
+    <![CDATA[
+INVITE sip:0000000002@ims.mnc001.mcc001.3gppnetwork.org SIP/2.0
+Via: SIP/2.0/TCP [local_ip]:[local_port];branch=[branch]
+Route: <sip:172.22.0.21:5060;lr;transport=TCP>
+From: <sip:0000000001@ims.mnc001.mcc001.3gppnetwork.org>;tag=[call_number]
+To: <sip:0000000002@ims.mnc001.mcc001.3gppnetwork.org>
+Call-ID: [call_id]
+CSeq: 1 INVITE
+Contact: <sip:0000000001@[local_ip]:[local_port];transport=TCP>
+Max-Forwards: 70
+Content-Type: application/sdp
+Content-Length: [len]
+
+v=0
+o=user1 53655765 2353687637 IN IP4 [local_ip]
+s=-
+c=IN IP4 [local_ip]
+t=0 0
+m=audio [media_port] RTP/AVP 0 8
+a=rtpmap:0 PCMU/8000
+a=rtpmap:8 PCMA/8000
+a=sendrecv
+
+    ]]>
+  </send>
+  <recv response="100" optional="true"/>
+  <recv response="180" optional="true"/>
+  <recv response="200" rrs="true"/>
+  <send>
+    <![CDATA[
+ACK [next_url] SIP/2.0
+Via: SIP/2.0/TCP [local_ip]:[local_port];branch=[branch]
+[routes]
+From: <sip:0000000001@ims.mnc001.mcc001.3gppnetwork.org>;tag=[call_number]
+To: <sip:0000000002@ims.mnc001.mcc001.3gppnetwork.org>[peer_tag_param]
+Call-ID: [call_id]
+CSeq: 1 ACK
+Max-Forwards: 70
+Content-Length: 0
+
+    ]]>
+  </send>
+  <nop>
+    <action>
+      <exec play_pcap_audio="/tmp/g711.pcap"/>
+    </action>
+  </nop>
+  <pause milliseconds="5000"/>
+  <send retrans="500">
+    <![CDATA[
+BYE [next_url] SIP/2.0
+Via: SIP/2.0/TCP [local_ip]:[local_port];branch=[branch]
+[routes]
+From: <sip:0000000001@ims.mnc001.mcc001.3gppnetwork.org>;tag=[call_number]
+To: <sip:0000000002@ims.mnc001.mcc001.3gppnetwork.org>[peer_tag_param]
+Call-ID: [call_id]
+CSeq: 2 BYE
+Max-Forwards: 70
+Content-Length: 0
+
+    ]]>
+  </send>
+  <recv response="200" optional="true"/>
+</scenario>
+

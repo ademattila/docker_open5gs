@@ -335,7 +335,7 @@ services:
     cap_add:
       - NET_ADMIN
     environment:
-      - TABLE=-1
+      - TABLE=0
       - INTERFACE=${RTPENGINE_IP}
       - LISTEN_NG=${RTPENGINE_IP}:2223
       - PIDFILE=/run/ngcp-rtpengine-daemon.pid
