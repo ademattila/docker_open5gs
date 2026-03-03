@@ -1,0 +1,37 @@
+/recordings/pcaps/1-7865%40172.22.0.24-efe3ff76b874cac6.pcap
+
+
+Timestamp started ms: 1772529792900.013
+SDP mode: offer
+SDP before RTP packet: 1
+
+v=0
+o=user1 53655765 2353687637 IN IP4 172.22.0.24
+s=-
+t=0 0
+m=audio 49102 RTP/AVP 0 8
+c=IN IP4 172.22.0.16
+a=rtpmap:0 PCMU/8000
+a=rtpmap:8 PCMA/8000
+a=sendrecv
+a=rtcp:49103
+
+Timestamp started ms: 1772529792900.013
+SDP mode: offer
+SDP before RTP packet: 1
+
+v=0
+o=user1 53655765 2353687637 IN IP4 172.22.0.24
+s=-
+t=0 0
+m=audio 49496 RTP/AVP 0 8
+c=IN IP4 172.22.0.16
+a=rtpmap:0 PCMU/8000
+a=rtpmap:8 PCMA/8000
+a=sendrecv
+a=rtcp:49497
+
+Timestamp terminated ms(first monologue): 0.000
+
+call start time: 2026-03-03T09:23:12
+call end time: 2026-03-03T08:34:14

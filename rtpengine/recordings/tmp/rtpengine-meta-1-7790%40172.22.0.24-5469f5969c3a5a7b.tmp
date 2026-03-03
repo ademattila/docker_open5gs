@@ -1,0 +1,32 @@
+/recordings/pcaps/1-7790%40172.22.0.24-5469f5969c3a5a7b.pcap
+
+
+Timestamp started ms: 1772527042078.780
+SDP mode: offer
+SDP before RTP packet: 1
+
+v=0
+o=user1 53655765 2353687637 IN IP4 172.22.0.24
+s=-
+t=0 0
+m=audio 49246 RTP/AVP 0 8
+c=IN IP4 172.22.0.16
+a=rtpmap:0 PCMU/8000
+a=rtpmap:8 PCMA/8000
+a=sendrecv
+a=rtcp:49247
+
+Timestamp started ms: 1772527042078.780
+SDP mode: offer
+SDP before RTP packet: 1
+
+v=0
+o=user1 53655765 2353687637 IN IP4 172.22.0.24
+s=-
+t=0 0
+m=audio 49708 RTP/AVP 0 8
+c=IN IP4 172.22.0.16
+a=rtpmap:0 PCMU/8000
+a=rtpmap:8 PCMA/8000
+a=sendrecv
+a=rtcp:49709

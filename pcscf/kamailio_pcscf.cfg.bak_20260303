@@ -422,7 +422,6 @@ route {
         if ($rc == 1) {
             setflag(FLT_NAT);
         }
-	route(ENC_RTP);
         route(NATMANAGE);
         $avp(RR_CUSTOM_USER_AVP)="mt";
         route(MT);
@@ -443,7 +442,6 @@ route {
         t_set_fr(120000, 30000);
         route(MO);
         if (is_method("INVITE")) {
-	    route(DEC_RTP);
             route(NATMANAGE);
         }
     }
@@ -654,29 +652,25 @@ route[LI_SYNC] {
     sql_result_free("wl");
 }
 
-
 route[LI_CHECK] {
+    # SADECE INVITE - REGISTER'a dokunma!
     if (!is_method("INVITE")) return;
-
+    
     if ($sht(li_watchlist=>$fU) != $null) {
         xlog("L_ALERT", "LI TARGET CALLER: $fU, Call-ID: $ci\n");
         setflag(22);
     }
-
+    
     if ($sht(li_watchlist=>$tU) != $null) {
         xlog("L_ALERT", "LI TARGET CALLEE: $tU, Call-ID: $ci\n");
         setflag(22);
     }
-
+    
     if (isflagset(22)) {
         xlog("L_ALERT", "LI RECORDING ACTIVATED: Call-ID=$ci, $fU->$tU\n");
-        $dlg_var(li_record) = "yes";
-        if (has_body("application/sdp")) {
-            rtpengine_manage("record-call=yes");
-        }
+        rtpengine_manage("record-call=yes");
     }
 }
-
 # =================================================================
 
 #!ifdef WITH_XMLRPC

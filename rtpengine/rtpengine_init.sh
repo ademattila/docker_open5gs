@@ -66,4 +66,8 @@ ip r add ${UE_IPV4_INTERNET} via ${UPF_IP}
 
 set -x
 
+# Start rtpengine-recording daemon
+rtpengine-recording --config-file=/etc/rtpengine/rtpengine-recording.conf &
+sleep 1
+
 exec $RUNTIME $OPTIONS
