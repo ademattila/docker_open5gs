@@ -330,6 +330,7 @@ services:
       - ./rtpengine/recordings:/recordings
       - ./rtpengine/spool:/var/spool/rtpengine
       - ./rtpengine/etc/rtpengine-recording.conf:/etc/rtpengine/rtpengine-recording.conf:ro
+      - ./rtpengine/etc/rtpengine.conf:/etc/rtpengine/rtpengine.conf:ro
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     cap_add:
