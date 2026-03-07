@@ -464,6 +464,7 @@ services:
       - "${PCSCF_BIND_PORT}/sctp"
       - "5060/tcp"
       - "5060/udp"
+      # - "2049/tcp"
       # - "5100-5120/tcp"
       # - "5100-5120/udp"
       # - "6100-6120/tcp"
@@ -471,6 +472,8 @@ services:
     networks:
       default:
         ipv4_address: ${PCSCF_IP}
+    ports:
+      - "0.0.0.0:2049:2049/tcp"
   smsc:
     image: docker_kamailio
     container_name: smsc

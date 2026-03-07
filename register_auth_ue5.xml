@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<scenario name="UAC Register with Auth UE5">
+  <send retrans="500">
+    <![CDATA[
+      REGISTER sip:ims.mnc001.mcc001.3gppnetwork.org SIP/2.0
+      Via: SIP/2.0/UDP [local_ip]:[local_port];branch=[branch]
+      From: <sip:001010000000005@ims.mnc001.mcc001.3gppnetwork.org>;tag=[call_number]
+      To: <sip:001010000000005@ims.mnc001.mcc001.3gppnetwork.org>
+      Call-ID: [call_id]
+      CSeq: 1 REGISTER
+      Contact: <sip:001010000000005@[local_ip]:[local_port]>
+      Max-Forwards: 70
+      Expires: 300
+      Content-Length: 0
+    ]]>
+  </send>
+  <recv response="100" optional="true"/>
+  <recv response="401" auth="true"/>
+  <send retrans="500">
+    <![CDATA[
+      REGISTER sip:ims.mnc001.mcc001.3gppnetwork.org SIP/2.0
+      Via: SIP/2.0/UDP [local_ip]:[local_port];branch=[branch]
+      From: <sip:001010000000005@ims.mnc001.mcc001.3gppnetwork.org>;tag=[call_number]
+      To: <sip:001010000000005@ims.mnc001.mcc001.3gppnetwork.org>
+      Call-ID: [call_id]
+      CSeq: 2 REGISTER
+      Contact: <sip:001010000000005@[local_ip]:[local_port]>
+      Max-Forwards: 70
+      Expires: 300
+      [authentication username=001010000000005 password=465B5CE8B199B49FAA5F0A2EE238A6BC]
+      Content-Length: 0
+    ]]>
+  </send>
+  <recv response="100" optional="true"/>
+  <recv response="200"/>
+</scenario>
