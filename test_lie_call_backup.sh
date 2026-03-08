@@ -1,5 +1,6 @@
 #!/bin/bash
-# LI Test Script - Native Kamailio LI
+# LI Test Script - UE1 "Alo" UE2 "Efendim" ses simülasyonu
+
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
@@ -7,15 +8,19 @@ NC='\033[0m'
 
 echo -e "${YELLOW}=== LI Ses Testi Başlatılıyor ===${NC}"
 
-# 1. Kamailio htable kontrol
-echo -e "${YELLOW}[*] Kamailio LI watchlist kontrol...${NC}"
-TARGET_COUNT=$(docker exec pcscf kamcmd htable.dump li_watchlist 2>/dev/null | grep -c "name:")
-if [ "$TARGET_COUNT" -gt 0 ]; then
-    echo -e "${GREEN}[✓] $TARGET_COUNT hedef htable'da aktif${NC}"
-else
-    echo -e "${RED}[✗] htable boş, LI_SYNC bekleniyor...${NC}"
-    exit 1
+# 1. li_agent çalışıyor mu?
+if ! ps aux | grep -q "[l]i_agent.py"; then
+    echo -e "${RED}[!] li_agent çalışmıyor, başlatılıyor...${NC}"
+    pkill -f li_agent.py 2>/dev/null; sleep 1
+    python3 ~/docker_open5gs/li_agent.py \
+        --mediation-ip 10.0.0.2 \
+        --x2-port 9060 \
+        --x3-port 9061 \
+        --rtpengine 172.22.0.16:2223 \
+        --listen 172.22.0.1:9091 >> /tmp/li_agent.log 2>&1 &
+    sleep 2
 fi
+echo -e "${GREEN}[✓] li_agent çalışıyor${NC}"
 
 # 2. X2/X3 trafik izleme başlat
 echo -e "${YELLOW}[*] X2/X3 trafik izleme başlatılıyor...${NC}"
@@ -33,15 +38,16 @@ docker exec -d nr_ue2 sipp -sn uas \
     -i 172.22.0.25 -p 5060 -t t1 -m 1 \
     -mp 7000
 sleep 2
-echo -e "${GREEN}[✓] UE2 hazır${NC}"
+echo -e "${GREEN}[✓] UE2 hazır (efendim.pcmu)${NC}"
 
 # 4. UE1 çağrı başlat
-echo -e "${YELLOW}[*] UE1 -> UE2 çağrı başlatılıyor...${NC}"
+echo -e "${YELLOW}[*] UE1 -> UE2 çağrı başlatılıyor (alo.pcmu)...${NC}"
 docker exec nr_ue sipp 172.22.0.21:5060 \
     -sf /tmp/invite_rtp_li.xml -m 1 -l 1 \
     -i 172.22.0.24 -p 5060 -mp 6000 \
     -trace_msg -message_file /tmp/sipp_msg.log 2>/dev/null
 echo -e "${GREEN}[✓] Çağrı tamamlandı${NC}"
+
 sleep 2
 
 # 5. tcpdump durdur
@@ -67,8 +73,8 @@ else
 fi
 
 echo ""
-echo -e "${YELLOW}=== Kamailio LI Logları ===${NC}"
-docker logs pcscf 2>&1 | grep -i "LI " | tail -10
+echo -e "${YELLOW}=== li_agent Son Loglar ===${NC}"
+tail -10 /tmp/li_agent.log
 
 echo ""
 echo -e "${YELLOW}=== WAV Kayıtları ===${NC}"
