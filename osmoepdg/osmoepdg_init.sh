@@ -1,31 +1,5 @@
 #!/bin/bash
 
-# BSD 2-Clause License
-
-# Copyright (c) 2020-2025, Supreeth Herle
-# All rights reserved.
-
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-
-# 1. Redistributions of source code must retain the above copyright notice, this
-#    list of conditions and the following disclaimer.
-
-# 2. Redistributions in binary form must reproduce the above copyright notice,
-#    this list of conditions and the following disclaimer in the documentation
-#    and/or other materials provided with the distribution.
-
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 [ ${#MNC} == 3 ] && EPC_DOMAIN="epc.mnc${MNC}.mcc${MCC}.3gppnetwork.org" || EPC_DOMAIN="epc.mnc0${MNC}.mcc${MCC}.3gppnetwork.org"
 
 mkdir -p /usr/local/etc/swanctl
@@ -60,28 +34,15 @@ sed -i 's|GTP_TRAFFIC_FWMARK|'$GTP_TRAFFIC_FWMARK'|g' /etc/swanctl/swanctl.conf
 sed -i 's|OSMOEPDG_IP|'$OSMOEPDG_IP'|g' /etc/swanctl/swanctl.conf
 sed -i 's|IPSEC_TRAFFIC_FWMARK|'$IPSEC_TRAFFIC_FWMARK'|g' /etc/swanctl/swanctl.conf
 
-# Clear logs from previous runs
+mkdir -p /mnt/osmoepdg/log
 cat /dev/null > /mnt/osmoepdg/log/console.log
 cat /dev/null > /mnt/osmoepdg/log/error.log
 cat /dev/null > /mnt/osmoepdg/log/erlang.log
 cat /dev/null > /mnt/osmoepdg/log/crash.log
 
-# Start strongSwan
-ipsec start --nofork &
-
-# Wait for charon to create the VICI socket
-sleep 2
-chmod 660 /var/run/charon.vici
-
-# Load config via swanctl
-swanctl --load-all
-
 # Create routing table entry
 grep -qE "^${EPDG_ROUTING_TABLE_NUMBER} ${EPDG_ROUTING_TABLE_NAME}$" /etc/iproute2/rt_tables || \
     echo "${EPDG_ROUTING_TABLE_NUMBER} ${EPDG_ROUTING_TABLE_NAME}" >> /etc/iproute2/rt_tables
-
-# Start configuration script in background
-/mnt/osmoepdg/configure_interface.sh &
 
 # Configure ipsec fwmark (nft)
 cp /mnt/osmoepdg/nftables.conf /etc/nftables.conf
@@ -90,10 +51,27 @@ sed -i 's|GTP_TRAFFIC_FWMARK|'$GTP_TRAFFIC_FWMARK'|g' /etc/nftables.conf
 sed -i 's|IPSEC_TRAFFIC_FWMARK|'$IPSEC_TRAFFIC_FWMARK'|g' /etc/nftables.conf
 nft -f /etc/nftables.conf
 
-# Start osmo-epdg
+# Start osmo-epdg FIRST
 cd /mnt/osmoepdg
 export ERL_FLAGS="-config /etc/osmocom/osmo-epdg.config"
-exec /osmo-epdg/_build/default/bin/osmo-epdg $@
+/osmo-epdg/_build/default/bin/osmo-epdg &
 
-# Sync docker time
-#ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+# Wait for GSUP port to be ready
+echo "Waiting for GSUP port 4222..."
+for i in $(seq 1 30); do
+    bash -c "echo > /dev/tcp/127.0.0.1/4222" 2>/dev/null && echo "GSUP ready!" && break
+    sleep 1
+done
+
+# Start strongSwan AFTER osmo-epdg is ready
+ipsec start --nofork &
+
+sleep 3
+chmod 660 /var/run/charon.vici
+swanctl --load-all
+
+# Start configuration script
+/mnt/osmoepdg/configure_interface.sh &
+
+# Keep container alive
+wait

@@ -1,0 +1,19 @@
+%-*- mode: erlang -*-
+{application, osmo_epdg,
+  [
+	{description, "ePDG"},
+	{vsn, "1"},
+	{registered, []},
+	{applications, [
+			kernel,
+			stdlib,
+			lager,
+			gtplib,
+			diameter,
+			osmo_gsup,
+			osmo_ss7,
+			gtp_u_kmod
+			]},
+	{mod, {osmo_epdg_app, []}},
+	{env, []}
+]}.

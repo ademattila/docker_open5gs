@@ -1,0 +1,16 @@
+--2026-03-16 10:06:00--  https://github.com/herlesupreeth/strongswan-epdg/archive/refs/heads/fix_dns_parse.tar.gz
+Resolving github.com (github.com)... 140.82.121.4
+Connecting to github.com (github.com)|140.82.121.4|:443... connected.
+HTTP request sent, awaiting response... 302 Found
+Location: https://codeload.github.com/herlesupreeth/strongswan-epdg/tar.gz/refs/heads/fix_dns_parse [following]
+--2026-03-16 10:06:01--  https://codeload.github.com/herlesupreeth/strongswan-epdg/tar.gz/refs/heads/fix_dns_parse
+Resolving codeload.github.com (codeload.github.com)... 140.82.121.10
+Connecting to codeload.github.com (codeload.github.com)|140.82.121.10|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: unspecified [application/x-gzip]
+Saving to: 'strongswan-epdg.tar.xz'
+
+strongswan-epdg.tar.xz                       [<=>                                                                               ]       0  --.-KB/s               strongswan-epdg.tar.xz                       [ <=>                                                                              ]   1.75M  8.28MB/s               strongswan-epdg.tar.xz                       [  <=>                                                                             ]   3.25M  7.43MB/s               strongswan-epdg.tar.xz                       [   <=>                                                                            ]   5.25M  8.11MB/s               strongswan-epdg.tar.xz                       [    <=>                                                                           ]   5.99M  8.19MB/s    in 0.7s    
+
+2026-03-16 10:06:02 (8.19 MB/s) - 'strongswan-epdg.tar.xz' saved [6277748]
+

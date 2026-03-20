@@ -273,6 +273,7 @@ services:
     volumes:
       - ./pyhss:/mnt/pyhss
       - ./pyhss/logs:/pyhss/log/
+      - ./pyhss/lib/diameter.py:/pyhss/lib/diameter.py
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     env_file:

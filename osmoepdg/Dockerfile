@@ -42,16 +42,14 @@ RUN apt-get update && \
     apt-get -y install telnet iproute2 net-tools git pkg-config autoconf make libtool gettext gperf libgmp-dev bison flex automake autotools-dev rebar3 libosmocore-utils libosmocore-dev libgtpnl-dev libgtpnl-tools libpcap-dev nftables tcpdump
 
 # Compile osmocom-epdg
-RUN git clone https://gitea.osmocom.org/erlang/osmo-epdg && \
-    cd osmo-epdg && \
-    git checkout tags/0.1.1 && \
+COPY osmo-epdg-src /osmo-epdg
+RUN cd /osmo-epdg && \
     rebar3 compile && \
     rebar3 escriptize
 
 # Compile strongswan-epdg
-RUN git clone https://github.com/herlesupreeth/strongswan-epdg && \
-    cd strongswan-epdg && \
-    git checkout fix_dns_parse && \
+COPY strongswan-epdg-src /strongswan-epdg
+RUN cd /strongswan-epdg && \
     autoreconf -i && \
     ./configure \
         --sysconfdir=/etc \
@@ -64,7 +62,7 @@ RUN git clone https://github.com/herlesupreeth/strongswan-epdg && \
         --enable-osmo-epdg \
         --enable-swanctl --enable-vici --enable-charon --disable-systemd
 
-RUN cd strongswan-epdg && \
+RUN cd /strongswan-epdg && \
     make -j`nproc` && make install
 
 CMD ["/mnt/osmoepdg/osmoepdg_init.sh"]

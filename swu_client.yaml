@@ -18,6 +18,11 @@ services:
       - "500/udp"
       - "2152/udp"
       - "2123/udp"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
     networks:
       default:
         ipv4_address: ${SWU_CLIENT_IP}
@@ -25,3 +30,4 @@ networks:
   default:
     external: true
     name: docker_open5gs_default
+

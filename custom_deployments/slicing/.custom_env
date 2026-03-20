@@ -1,8 +1,8 @@
 # Set proper timezone to sync times between docker host and containers
 #TZ=Europe/Berlin
 
-MCC=001
-MNC=01
+MCC=286
+MNC=999
 TAC=1
 
 TEST_NETWORK=172.22.0.0/24

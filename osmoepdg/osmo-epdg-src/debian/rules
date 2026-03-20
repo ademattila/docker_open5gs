@@ -1,0 +1,38 @@
+#!/usr/bin/make -f
+export DH_VERBOSE=1
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+include /usr/share/dpkg/default.mk
+export ERL_COMPILER_OPTIONS=deterministic
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	if [ -e build_dep.tar.gz ] ; then tar xzf ./build_dep.tar.gz ; fi
+	dh_auto_build
+	rebar3 eunit
+	# Libraries are built under _checkouts/priv/lib/, but dh_install (debian/osmo-epdg.install)
+	# will expect them under /_build/default/lib/gen_socket/priv/lib/.
+	# Copy the path under debian/tmp/ to let dh_install find it.
+	if [ -e build_dep.tar.gz ]; then \
+		mkdir -p ./_build/default/lib/gen_socket/priv/lib/; \
+		cp _checkouts/gen_socket/priv/lib/gen_socket*.so ./_build/default/lib/gen_socket/priv/lib/; \
+	fi
+
+	# Build manuals
+	make -C docs/manuals
+
+override_dh_install:
+	install -d debian/tmp/etc/osmocom/
+	install -m 755 config/sys.config debian/tmp/etc/osmocom/osmo-epdg.config
+	sed -i 's#_build/default/lib/gen_socket/priv/lib#/usr/lib/#g' \
+		debian/tmp/etc/osmocom/osmo-epdg.config
+	dh_install
+
+override_dh_clean:
+	dh_clean
+	rm -rf _build _checkouts
+
+# Don't create .pdf.gz files (barely saves space and they can't be opened directly by most pdf readers)
+override_dh_compress:
+	dh_compress -X.pdf
