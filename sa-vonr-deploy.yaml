@@ -556,6 +556,22 @@ services:
         ipv4_address: ${OSMOEPDG_IP}
 
 
+  pcrf:
+    container_name: pcrf
+    image: docker_open5gs
+    env_file:
+      - .env
+    environment:
+      - COMPONENT_NAME=pcrf
+    volumes:
+      - ./pcrf:/mnt/pcrf
+      - ./log:/open5gs/install/var/log/open5gs
+    networks:
+      default:
+        ipv4_address: ${PCRF_IP}
+
+
+
 networks:
   default:
     name: docker_open5gs_default
@@ -569,3 +585,4 @@ volumes:
     name: docker_open5gs_mongodbdata
   dbdata:
     name: docker_open5gs_dbdata
+

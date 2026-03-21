@@ -49,8 +49,8 @@ class Milenage(BaseLTEAuthAlgo):
         CryptoLogger.debug("Generating SQN bytes")
         CryptoLogger.debug("Current SQN value is " + str(sqn) + " and is " + str(len(str(sqn))) + " long")
         sqn_bytes = bytearray.fromhex('{:012x}'.format(sqn))
-        #With some inputs a space is added here.
-        #See https://stackoverflow.com/questions/57697983/how-do-i-interpret-spaces-in-python-byte-arrays
+        # With some inputs a space is added here.
+        # See https://stackoverflow.com/questions/57697983/how-do-i-interpret-spaces-in-python-byte-arrays
         CryptoLogger.debug("Generated SQN bytes")
         CryptoLogger.debug("SQN bytes is " + str(sqn_bytes))
 
@@ -61,12 +61,15 @@ class Milenage(BaseLTEAuthAlgo):
         CryptoLogger.debug("Generating f1")
         mac_a, _ = Milenage.f1(key, sqn_bytes, rand, opc, self.amf)
         CryptoLogger.debug("Generated f1")
+
         CryptoLogger.debug("Generating f2")
         xres, ak = Milenage.f2_f5(key, rand, opc)
         CryptoLogger.debug("Generated f2")
+
         CryptoLogger.debug("Generating f3")
         ck = Milenage.f3(key, rand, opc)
         CryptoLogger.debug("Generated f3")
+
         CryptoLogger.debug("Generating f4")
         ik = Milenage.f4(key, rand, opc)
         CryptoLogger.debug("Generated f4")
@@ -74,15 +77,17 @@ class Milenage(BaseLTEAuthAlgo):
         CryptoLogger.debug("Generate generate_autn")
         autn = Milenage.generate_autn(sqn_bytes, ak, mac_a, self.amf)
         CryptoLogger.debug("Generated generate_autn")
+
         CryptoLogger.debug("Generate generate_kasme")
         kasme = Milenage.generate_kasme(ck, ik, plmn, sqn_bytes, ak)
         CryptoLogger.debug("Generated generate_kasme")
+
         CryptoLogger.debug("Successfully ran milenage.generate_eutran_vector")
         return rand, xres, autn, kasme
 
     def generate_maa_vector(self, key, opc, sqn, plmn):
         """
-        Generate the E-EUTRAN key vector.
+        Generate the MAA vector.
         Args:
             key (bytes): 128 bit subscriber key
             opc (bytes): 128 bit operator variant algorithm configuration field
@@ -94,17 +99,16 @@ class Milenage(BaseLTEAuthAlgo):
                   3      MNC digit 2 | MNC digit 1
         Returns:
             rand (bytes): 128 bit random challenge
-            xres (bytes): 128 bit expected result
+            xres (bytes): 64 bit expected result
             autn (bytes): 128 bit authentication token
-            kasme (bytes): 256 bit base network authentication code
+            ck (bytes): 128 bit confidentiality key
+            ik (bytes): 128 bit integrity key
         """
         CryptoLogger.debug("Called milenage.generate_maa_vector")
 
         CryptoLogger.debug("Generating SQN bytes")
         CryptoLogger.debug("Current SQN value is " + str(sqn) + " and is " + str(len(str(sqn))) + " long")
         sqn_bytes = bytearray.fromhex('{:012x}'.format(sqn))
-        #With some inputs a space is added here.
-        #See https://stackoverflow.com/questions/57697983/how-do-i-interpret-spaces-in-python-byte-arrays
         CryptoLogger.debug("Generated SQN bytes")
         CryptoLogger.debug("SQN bytes is " + str(sqn_bytes))
 
@@ -115,7 +119,6 @@ class Milenage(BaseLTEAuthAlgo):
         CryptoLogger.debug("Generating f1")
         mac_a, _ = Milenage.f1(key, sqn_bytes, rand, opc, self.amf)
         CryptoLogger.debug("Generated f1")
-
 
         CryptoLogger.debug("Generating f2")
         xres, ak = Milenage.f2_f5(key, rand, opc)
@@ -123,23 +126,42 @@ class Milenage(BaseLTEAuthAlgo):
 
         CryptoLogger.debug("Generating ck")
         ck = Milenage.f3(key, rand, opc)
+        CryptoLogger.debug("Generated ck")
+
         CryptoLogger.debug("Generating ik")
         ik = Milenage.f4(key, rand, opc)
-
+        CryptoLogger.debug("Generated ik")
 
         CryptoLogger.debug("Generate generate_autn")
         autn = Milenage.generate_autn(sqn_bytes, ak, mac_a, self.amf)
+        CryptoLogger.debug("Generated generate_autn")
 
         return rand, xres, autn, ck, ik
 
     def generate_eap_aka_vector(self, key, opc, sqn, plmn):
+        """
+        Generate the EAP-AKA vector.
+        Args:
+            key (bytes): 128 bit subscriber key
+            opc (bytes): 128 bit operator variant algorithm configuration field
+            sqn (int): 48 bit sequence number
+            plmn (bytes): 24 bit network identifer
+        Returns:
+            rand (bytes): 128 bit random challenge
+            xres (bytes): 64 bit expected result
+            autn (bytes): 128 bit authentication token
+            ck (bytes): 128 bit confidentiality key
+            ik (bytes): 128 bit integrity key
+            mac_a (bytes): 64 bit network authentication code
+            ak (bytes): 48 bit anonymity key
+        """
         CryptoLogger.debug("Called milenage.generate_eap_aka_vector")
 
         CryptoLogger.debug("Generating SQN bytes")
         CryptoLogger.debug("Current SQN value is " + str(sqn) + " and is " + str(len(str(sqn))) + " long")
         sqn_bytes = bytearray.fromhex('{:012x}'.format(sqn))
-        #With some inputs a space is added here.
-        #See https://stackoverflow.com/questions/57697983/how-do-i-interpret-spaces-in-python-byte-arrays
+        # With some inputs a space is added here.
+        # See https://stackoverflow.com/questions/57697983/how-do-i-interpret-spaces-in-python-byte-arrays
         CryptoLogger.debug("Generated SQN bytes")
         CryptoLogger.debug("SQN bytes is " + str(sqn_bytes))
 
@@ -151,17 +173,23 @@ class Milenage(BaseLTEAuthAlgo):
         mac_a, _ = Milenage.f1(key, sqn_bytes, rand, opc, self.amf)
         CryptoLogger.debug("Generated f1")
 
-
         CryptoLogger.debug("Generating f2")
         xres, ak = Milenage.f2_f5(key, rand, opc)
         CryptoLogger.debug("Generated f2")
 
+        CryptoLogger.debug("Generating f3")
+        ck = Milenage.f3(key, rand, opc)
+        CryptoLogger.debug("Generated f3")
+
+        CryptoLogger.debug("Generating f4")
+        ik = Milenage.f4(key, rand, opc)
+        CryptoLogger.debug("Generated f4")
+
         CryptoLogger.debug("Generate generate_autn")
         autn = Milenage.generate_autn(sqn_bytes, ak, mac_a, self.amf)
-        ck = Milenage.f3(key, rand, opc)
-        ik = Milenage.f4(key, rand, opc)
+        CryptoLogger.debug("Generated generate_autn")
 
-        return rand, xres, autn, mac_a, ak, ck, ik
+        return rand, xres, autn, ck, ik, mac_a, ak
 
     def generate_auts(self, key, opc, rand, sqn):
         """
@@ -193,11 +221,7 @@ class Milenage(BaseLTEAuthAlgo):
             sqn_ms (int), 48 bit sequence number from client
             mac_s (bytes), 64 bit resync authentication code
         """
-        #print("key is: " + str(type(key)) + " and has length of " + str(len(key)))
-        #print("rand is: " + str(type(rand)) + " and has length of " + str(len(rand)))
-        #print("opc is: " + str(type(opc)) + " and has length of " + str(len(opc)))
         ak = self.f5_star(key, rand, opc)
-        #print("AK is: " + str(type(ak)) + " and has length of " + str(len(ak)))
         sqn_ms = xor(auts[:6], ak)
         sqn_ms_int = int.from_bytes(sqn_ms, byteorder='big')
         _, mac_s = self.f1(key, sqn_ms, rand, opc, self.amf)
@@ -219,22 +243,16 @@ class Milenage(BaseLTEAuthAlgo):
         Returns:
             (64 bit Network auth code, 64 bit Resynch auth code)
         """
-        # TEMP = E_K(RAND XOR OP_C)
         temp = cls.encrypt(key, xor(rand, opc))
 
-        # IN1 = SQN || AMF || SQN || AMF
         in1 = (sqn[0:6] + amf[0:2]) * 2
 
-        # Constants from 3GPP 35.206 4.1
-        c1 = 16 * b'\x00'  # some constant
-        r1 = 8  # rotate by 8 bytes
+        c1 = 16 * b'\x00'
+        r1 = 8
 
-        # OUT1 = E_K(TEMP XOR rotate(IN1 XOR OP_C, r1) XOR c1) XOR OP_C
         out1_ = cls.encrypt(key, xor(temp, rotate(xor(in1, opc), r1)), c1)
         out1 = xor(opc, out1_)
 
-        #  MAC-A = f1 = OUT1[0] .. OUT1[63]
-        #  MAC-S = f1* = OUT1[64] .. OUT1[127]
         return out1[:8], out1[8:]
 
     @classmethod
@@ -250,16 +268,11 @@ class Milenage(BaseLTEAuthAlgo):
         Returns:
             (xres, ak) = (64 bit response to challenge, 48 bit anonymity key)
         """
-        # Constants from 3GPP 35.206 4.1
-        c2 = 15 * b'\x00' + b'\x01'  # some constant
-        r2 = 0  # rotate by 0 bytes
+        c2 = 15 * b'\x00' + b'\x01'
+        r2 = 0
 
-        # TEMP = E_K(RAND XOR OP_C)
-        # OUT2 = E_K(rotate(TEMP XOR OP_C, r2) XOR c2) XOR OP_C
         temp_x_opc = xor(cls.encrypt(key, xor(rand, opc)), opc)
         out2 = xor(cls.encrypt(key, xor(rotate(temp_x_opc, r2), c2)), opc)
-        # res = f2 = OUT2[64] ... OUT2[127]
-        # ak = f5 = OUT2[0] ... OUT2[47]
         return out2[8:16], out2[0:6]
 
     @classmethod
@@ -275,15 +288,11 @@ class Milenage(BaseLTEAuthAlgo):
         Returns:
             ck, 128 bit confidentiality key
         """
-        # Constants from 3GPP 35.206 4.1
-        c3 = 15 * b'\x00' + b'\x02'  # some constant
-        r3 = 4  # rotate by 4 bytes
+        c3 = 15 * b'\x00' + b'\x02'
+        r3 = 4
 
-        # TEMP = E_K(RAND XOR OP_C)
-        # OUT3 = E_K(rotate(TEMP XOR OP_C, r3) XOR c3) XOR OP_C
         temp_x_opc = xor(cls.encrypt(key, xor(rand, opc)), opc)
         out3 = xor(cls.encrypt(key, xor(rotate(temp_x_opc, r3), c3)), opc)
-        # ck = f3 = OUT3
         return out3
 
     @classmethod
@@ -299,15 +308,11 @@ class Milenage(BaseLTEAuthAlgo):
         Returns:
             ik, 128 bit integrity key
         """
-        # Constants from 3GPP 35.206 4.1
-        c4 = 15 * b'\x00' + b'\x04'  # some constant
-        r4 = 8  # rotate by 8 bytes
+        c4 = 15 * b'\x00' + b'\x04'
+        r4 = 8
 
-        # TEMP = E_K(RAND XOR OP_C)
-        # OUT4 = E_K(rotate(TEMP XOR OP_C, r4) XOR c4) XOR OP_C
         temp_x_opc = xor(cls.encrypt(key, xor(rand, opc)), opc)
         out4 = xor(cls.encrypt(key, xor(rotate(temp_x_opc, r4), c4)), opc)
-        # ik = f4 = OUT4
         return out4
 
     @classmethod
@@ -323,15 +328,11 @@ class Milenage(BaseLTEAuthAlgo):
         Returns:
             ak, 48 bit anonymity key
         """
-        # Constants from 3GPP 35.206 4.1
-        c5 = 15 * b'\x00' + b'\x08'  # some constant
-        r5 = 12  # rotate by 12 bytes
+        c5 = 15 * b'\x00' + b'\x08'
+        r5 = 12
 
-        # TEMP = E_K(RAND XOR OP_C)
-        # OUT5 = E_K(rotate(TEMP XOR OP_C, r5 XOR c5) XOR OP_C
         temp_x_opc = xor(cls.encrypt(key, xor(rand, opc)), opc)
         out5 = xor(cls.encrypt(key, xor(rotate(temp_x_opc, r5), c5)), opc)
-        # ak = f5* = OUT5[0] . OUT5[47]
         return out5[:6]
 
     @classmethod
@@ -442,13 +443,13 @@ def xor(s1, s2):
         s1 (bytes): first set of bytes
         s2 (bytes): second set of bytes
     Returns:
-        (bytes) s1 ^ s2
+        (bytes) s1 ^ b for a, b in zip(s1, s2)
     Raises:
         ValueError if s1 and s2 lengths don't match
     """
     if len(s1) != len(s2):
         CryptoLogger.error("XOR Error - S1 and S2 don't match - Probably that space issue")
-        #raise ValueError('Input not equal length, s1 is %d bytes and s2 is  %d bytes' % (len(s1), len(s2)))
+        # raise ValueError('Input not equal length, s1 is %d bytes and s2 is  %d bytes' % (len(s1), len(s2)))
     return bytes(a ^ b for a, b in zip(s1, s2))
 
 
@@ -462,5 +463,4 @@ def rotate(input_s, bytes_):
     Returns:
         (bytes) s1 rotated by n bytes
     """
-    return bytes(input_s[(i + bytes_) % len(input_s)] for i in range(len(
-        input_s)))
+    return bytes(input_s[(i + bytes_) % len(input_s)] for i in range(len(input_s)))
