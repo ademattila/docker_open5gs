@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<scenario name="register_auth">
+  <send retrans="500">
+    <![CDATA[
+REGISTER sip:[field0] SIP/2.0
+Via: SIP/2.0/UDP [local_ip]:[local_port];branch=[branch]
+From: <sip:[field1]@[field0]>;tag=[call_number]
+To: <sip:[field1]@[field0]>
+Call-ID: [call_id]
+CSeq: 1 REGISTER
+Contact: <sip:[field1]@[local_ip]:[local_port]>
+Max-Forwards: 70
+Expires: 3600
+Content-Length: 0
+
+    ]]>
+  </send>
+  <recv response="401" auth="true">
+  </recv>
+  <send retrans="500">
+    <![CDATA[
+REGISTER sip:[field0] SIP/2.0
+Via: SIP/2.0/UDP [local_ip]:[local_port];branch=[branch]
+From: <sip:[field1]@[field0]>;tag=[call_number]
+To: <sip:[field1]@[field0]>
+Call-ID: [call_id]
+CSeq: 2 REGISTER
+Contact: <sip:[field1]@[local_ip]:[local_port]>
+Max-Forwards: 70
+Expires: 3600
+[field2]
+Content-Length: 0
+
+    ]]>
+  </send>
+  <recv response="200">
+  </recv>
+  <pause milliseconds="1000"/>
+</scenario>

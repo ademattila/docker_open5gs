@@ -1,6 +1,8 @@
 #!/bin/bash
 
 [ ${#MNC} == 3 ] && EPC_DOMAIN="epc.mnc${MNC}.mcc${MCC}.3gppnetwork.org" || EPC_DOMAIN="epc.mnc0${MNC}.mcc${MCC}.3gppnetwork.org"
+[ ${#MNC} == 3 ] && IMS_DOMAIN="ims.mnc${MNC}.mcc${MCC}.3gppnetwork.org" || IMS_DOMAIN="ims.mnc0${MNC}.mcc${MCC}.3gppnetwork.org"
+
 
 mkdir -p /usr/local/etc/swanctl
 mkdir -p /usr/local/etc/strongswan.d
@@ -26,6 +28,7 @@ export EPDG_ROUTING_TABLE_NAME=epdg
 sed -i 's|OSMOEPDG_IP|'$OSMOEPDG_IP'|g' /etc/osmocom/osmo-epdg.config
 sed -i 's|OSMOEPDG_COMMA_SEPARATED_IP|'$OSMOEPDG_COMMA_SEPARATED_IP'|g' /etc/osmocom/osmo-epdg.config
 sed -i 's|HSS_IP|'$PYHSS_IP'|g' /etc/osmocom/osmo-epdg.config
+sed -i 's|IMS_DOMAIN|'$IMS_DOMAIN'|g' /etc/osmocom/osmo-epdg.config
 sed -i 's|EPC_DOMAIN|'$EPC_DOMAIN'|g' /etc/osmocom/osmo-epdg.config
 sed -i 's|SMF_IP|'$SMF_IP'|g' /etc/osmocom/osmo-epdg.config
 sed -i 's|EPDG_TUN_INTERFACE|'$EPDG_TUN_INTERFACE'|g' /etc/osmocom/osmo-epdg.config

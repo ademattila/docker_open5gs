@@ -2,7 +2,7 @@
 #TZ=Europe/Berlin
 
 MCC=286
-MNC=999
+MNC=001
 TAC=1
 
 TEST_NETWORK=172.22.0.0/24

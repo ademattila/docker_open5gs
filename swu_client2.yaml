@@ -1,0 +1,32 @@
+services:
+  swu_client2:
+    image: docker_swu_client2
+    container_name: swu_client2
+    privileged: true
+    volumes:
+      - ./swu_client2:/mnt/swu_client2
+    env_file:
+      - .env
+    environment:
+      - COMPONENT_NAME=swu_client2
+      - SWU_CLIENT_IP=172.22.0.43
+      - SWU_CLIENT_APN=internet
+      - UE1_IMSI=286999000000009
+      - UE1_KI=465B5CE8B199B49FAA5F0A2EE238A6BC
+      - UE1_OPC=<OPc değeri>   
+      - OSMOEPDG_IP=172.22.0.41
+      - MCC=286
+      - MNC=999
+      - PCSCF_IP=<pcscf_ip>
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "2"
+    networks:
+      default:
+        ipv4_address: 172.22.0.43
+networks:
+  default:
+    external: true
+    name: docker_open5gs_default
