@@ -13,4 +13,4 @@ epcns                   1D IN A         DNS_IP
 pcrf                    1D IN A         PCRF_IP
 
 aaa                     1D IN A         OSMOEPDG_IP
-epdg                    1D IN A         172.22.0.41
+epdg                    1D IN A         46.62.140.156

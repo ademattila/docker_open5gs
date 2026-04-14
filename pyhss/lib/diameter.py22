@@ -55,6 +55,8 @@ class Diameter:
         self.logTool.log(service='HSS', level='info', message=f"PLMN: {str(self.MCC)}/{str(self.MNC)}", redisClient=self.redisMessaging)
 
         self.diameterResponseList = [
+                {"commandCode": 303, "applicationId": 16777265, "responseMethod": self.Answer_16777265_303, "failureResultCode": 4100 ,"requestAcronym": "MAR", "responseAcronym": "MAA", "requestName": "SWx Multimedia Authentication Request", "responseName": "SWx Multimedia Authentication Answer"},
+                {"commandCode": 301, "applicationId": 16777265, "responseMethod": self.Answer_16777265_301, "failureResultCode": 4100 ,"requestAcronym": "SAR", "responseAcronym": "SAA", "requestName": "SWx Server Assignment Request", "responseName": "SWx Server Assignment Answer"},
                 {"commandCode": 257, "applicationId": 0, "flags": 80, "responseMethod": self.Answer_257, "failureResultCode": 5012 ,"requestAcronym": "CER", "responseAcronym": "CEA", "requestName": "Capabilites Exchange Request", "responseName": "Capabilites Exchange Answer"},
                 {"commandCode": 280, "applicationId": 0, "flags": 80, "responseMethod": self.Answer_280, "failureResultCode": 5012 ,"requestAcronym": "DWR", "responseAcronym": "DWA", "requestName": "Device Watchdog Request", "responseName": "Device Watchdog Answer"},
                 {"commandCode": 282, "applicationId": 0, "flags": 80, "responseMethod": self.Answer_282, "failureResultCode": 5012 ,"requestAcronym": "DPR", "responseAcronym": "DPA", "requestName": "Disconnect Peer Request", "responseName": "Disconnect Peer Answer"},
@@ -73,10 +75,9 @@ class Diameter:
                 {"commandCode": 316, "applicationId": 16777251, "responseMethod": self.Answer_16777251_316, "failureResultCode": 4100 ,"requestAcronym": "ULR", "responseAcronym": "ULA", "requestName": "Update Location Request", "responseName": "Update Location Answer"},
                 {"commandCode": 321, "applicationId": 16777251, "responseMethod": self.Answer_16777251_321, "failureResultCode": 5012 ,"requestAcronym": "PUR", "responseAcronym": "PUA", "requestName": "Purge UE Request", "responseName": "Purge UE Answer"},
                 {"commandCode": 323, "applicationId": 16777251, "responseMethod": self.Answer_16777251_323, "failureResultCode": 5012 ,"requestAcronym": "NOR", "responseAcronym": "NOA", "requestName": "Notify Request", "responseName": "Notify Answer"},
-                {"commandCode": 303, "applicationId": 16777265, "responseMethod": self.Answer_16777265_303, "failureResultCode": 4100 ,"requestAcronym": "MAR", "responseAcronym": "MAA", "requestName": "SWx Multimedia Authentication Request", "responseName": "SWx Multimedia Authentication Answer"},
-                {"commandCode": 301, "applicationId": 16777265, "responseMethod": self.Answer_16777265_301, "failureResultCode": 4100 ,"requestAcronym": "SAR", "responseAcronym": "SAA", "requestName": "SWx Server Assignment Request", "responseName": "SWx Server Assignment Answer"},
                 {"commandCode": 324, "applicationId": 16777252, "responseMethod": self.Answer_16777252_324, "failureResultCode": 4100 ,"requestAcronym": "ECR", "responseAcronym": "ECA", "requestName": "ME Identity Check Request", "responseName": "ME Identity Check Answer"},
                 {"commandCode": 8388622, "applicationId": 16777291, "responseMethod": self.Answer_16777291_8388622, "failureResultCode": 4100 ,"requestAcronym": "LRR", "responseAcronym": "LRA", "requestName": "LCS Routing Info Request", "responseName": "LCS Routing Info Answer"},
+                {"commandCode": 303, "applicationId": 16777265, "responseMethod": self.Answer_16777265_303, "failureResultCode": 4100 ,"requestAcronym": "MAR", "responseAcronym": "MAA", "requestName": "Multimedia Authentication Request", "responseName": "Multimedia Authentication Answer"},
             ]
 
         self.diameterRequestList = [
@@ -1312,7 +1313,6 @@ class Diameter:
         avp += self.generate_avp(260, 40, "000001024000000c" + format(int(16777236),"x").zfill(8) +  "0000010a4000000c000028af")      #Vendor-Specific-Application-ID (Rx)
         avp += self.generate_avp(265, 40, format(int(10415),"x").zfill(8))                               #Supported-Vendor-ID (3GPP)
         avp += self.generate_avp(260, 40, "000001024000000c" + format(int(16777238),"x").zfill(8) +  "0000010a4000000c000028af")      #Vendor-Specific-Application-ID (Gx)
-        avp += self.generate_avp(265, 40, format(int(10415),"x").zfill(8))                               #Supported-Vendor-ID (3GPP)
         avp += self.generate_avp(260, 40, "000001024000000c" + format(int(16777265),"x").zfill(8) +  "0000010a4000000c000028af")      #Vendor-Specific-Application-ID (SWx)
         avp += self.generate_avp(258, 40, format(int(16777238),"x").zfill(8))                            #Auth-Application-ID - Diameter Gx
         avp += self.generate_avp(258, 40, format(int(10),"x").zfill(8))                                  #Auth-Application-ID - Diameter CER
@@ -1848,6 +1848,208 @@ class Diameter:
         except Exception as e:
             self.logTool.log(service='HSS', level='error', message=traceback.format_exc(), redisClient=self.redisMessaging)
 
+#3GPP SWx Multimedia Authentication Answer (MAA) - RFC 5778 / TS 29.273
+    def Answer_16777265_303(self, packet_vars, avps):
+        self.logTool.log(service='HSS', level='debug', message="[SWx] Got MAR request", redisClient=self.redisMessaging)
+
+        # Get User-Name AVP (NAI format: 0001010000000001@nai.epc.mnc001.mcc286.3gppnetwork.org)
+        try:
+            username = self.get_avp_data(avps, 1)[0]
+            username = binascii.unhexlify(username).decode('utf-8')
+            imsi = username.split('@')[0]
+            if imsi.startswith('0') and len(imsi) == 16:
+                imsi = imsi[1:]
+            self.logTool.log(service='HSS', level='debug', message=f"[SWx] MAR for IMSI: {imsi}", redisClient=self.redisMessaging)
+        except Exception as e:
+            self.logTool.log(service='HSS', level='error', message=f"[SWx] Failed to parse User-Name AVP: {e}", redisClient=self.redisMessaging)
+            return None
+
+        avp = ''
+        session_id = self.get_avp_data(avps, 263)[0]
+        avp += self.generate_avp(263, 40, session_id)                                                        #Session-ID
+        avp += self.generate_avp(277, 40, "00000001")                                                        #Auth-Session-State
+        avp += self.generate_avp(264, 40, self.OriginHost)                                                   #Origin-Host
+        avp += self.generate_avp(296, 40, self.OriginRealm)                                                  #Origin-Realm
+        avp += self.generate_avp(260, 40, "0000010a4000000c000028af" + "000001024000000c" + format(int(16777265),"x").zfill(8))  #Vendor-Specific-Application-ID SWx
+
+        # Get subscriber from DB
+        try:
+            subscriber_details = self.database.Get_Subscriber(imsi=imsi)
+        except Exception as e:
+            self.logTool.log(service='HSS', level='debug', message=f"[SWx] Subscriber {imsi} not found: {e}", redisClient=self.redisMessaging)
+            avp_experimental_result = self.generate_vendor_avp(266, 40, 10415, '')
+            avp_experimental_result += self.generate_avp(298, 40, self.int_to_hex(5001, 4))   #DIAMETER_ERROR_USER_UNKNOWN
+            avp += self.generate_avp(297, 40, avp_experimental_result)
+            avp += self.generate_avp(1, 40, str(binascii.hexlify(username.encode()),'ascii'))  #User-Name
+            response = self.generate_diameter_packet("01", "40", 303, 16777265, packet_vars['hop-by-hop-identifier'], packet_vars['end-to-end-identifier'], avp)
+            return response
+
+        self.logTool.log(service='HSS', level='debug', message=f"[SWx] Found subscriber: {imsi}", redisClient=self.redisMessaging)
+
+        # Generate EAP-AKA vector
+        try:
+            mcc = imsi[0:3]
+            mnc = imsi[3:5]
+            plmn = self.EncodePLMN(mcc, mnc)
+
+            vector_dict = self.database.Get_Vectors_AuC(subscriber_details['auc_id'], "eap_aka", plmn=plmn)
+            self.logTool.log(service='HSS', level='debug', message=f"[SWx] Generated EAP-AKA vector: RAND={vector_dict['rand']}", redisClient=self.redisMessaging)
+
+            # SIP-Auth-Data-Item AVP (612) containing EAP-AKA vectors
+            # AVP 608: SIP-Authentication-Scheme = "EAP-AKA"
+            # AVP 609: SIP-Authenticate = RAND + AUTN
+            # AVP 610: SIP-Authorization = XRES
+            # AVP 611: Confidentiality-Key = CK (from mac+ak for EAP-AKA)
+            # AVP 612: Integrity-Key = IK
+
+            sip_auth_data = ''
+            sip_auth_data += self.generate_vendor_avp(608, "c0", 10415, str(binascii.hexlify(b'EAP-AKA'), 'ascii'))   #SIP-Authentication-Scheme
+            sip_auth_data += self.generate_vendor_avp(609, "c0", 10415, vector_dict['rand'] + vector_dict['autn'])     #SIP-Authenticate (RAND+AUTN)
+            sip_auth_data += self.generate_vendor_avp(610, "c0", 10415, vector_dict['xres'])                           #SIP-Authorization (XRES)
+            sip_auth_data += self.generate_vendor_avp(625, "c0", 10415, vector_dict['ck'])                            #Confidentiality-Key (CK)
+            sip_auth_data += self.generate_vendor_avp(626, "c0", 10415, vector_dict['ik'])                             #Integrity-Key (IK)
+
+            avp += self.generate_vendor_avp(612, "c0", 10415, sip_auth_data)                                           #SIP-Auth-Data-Item
+            avp += self.generate_vendor_avp(607, "c0", 10415, self.int_to_hex(1, 4))                                   #SIP-Number-Auth-Items
+            avp += self.generate_avp(1, 40, str(binascii.hexlify(username.encode()), 'ascii'))                         #User-Name
+            avp += self.generate_avp(268, 40, self.int_to_hex(2001, 4))                                                #Result-Code DIAMETER_SUCCESS
+
+            response = self.generate_diameter_packet("01", "40", 303, 16777265, packet_vars['hop-by-hop-identifier'], packet_vars['end-to-end-identifier'], avp)
+            self.logTool.log(service='HSS', level='debug', message="[SWx] Successfully Generated MAA", redisClient=self.redisMessaging)
+            return response
+
+        except Exception as e:
+            self.logTool.log(service='HSS', level='error', message=f"[SWx] Error generating EAP-AKA vector: {traceback.format_exc()}", redisClient=self.redisMessaging)
+            avp += self.generate_avp(268, 40, self.int_to_hex(5012, 4))   #DIAMETER_UNABLE_TO_COMPLY
+            response = self.generate_diameter_packet("01", "40", 303, 16777265, packet_vars['hop-by-hop-identifier'], packet_vars['end-to-end-identifier'], avp)
+            return response
+
+
+    def Answer_16777265_301(self, packet_vars, avps):
+        self.logTool.log(service='HSS', level='debug', message="[SWx] Got SAR request", redisClient=self.redisMessaging)
+        try:
+            username = self.get_avp_data(avps, 1)[0]
+            username = binascii.unhexlify(username).decode('utf-8')
+            imsi = username.split('@')[0]
+            if imsi.startswith('0') and len(imsi) == 16:
+                imsi = imsi[1:]
+            self.logTool.log(service='HSS', level='debug', message=f"[SWx] SAR for IMSI: {imsi}", redisClient=self.redisMessaging)
+        except Exception as e:
+            self.logTool.log(service='HSS', level='error', message=f"[SWx] SAR failed to parse User-Name AVP: {e}", redisClient=self.redisMessaging)
+            return None
+        avp = ''
+        session_id = self.get_avp_data(avps, 263)[0]
+        avp += self.generate_avp(263, 40, session_id)
+        avp += self.generate_avp(277, 40, "00000001")
+        avp += self.generate_avp(264, 40, self.OriginHost)
+        avp += self.generate_avp(296, 40, self.OriginRealm)
+        avp += self.generate_avp(260, 40, "0000010a4000000c000028af" + "000001024000000c" + format(int(16777265),"x").zfill(8))
+        try:
+            subscriber_details = self.database.Get_Subscriber(imsi=imsi)
+            self.logTool.log(service='HSS', level='debug', message=f"[SWx] SAR subscriber found: {imsi}", redisClient=self.redisMessaging)
+        except Exception as e:
+            self.logTool.log(service='HSS', level='error', message=f"[SWx] SAR subscriber not found: {e}", redisClient=self.redisMessaging)
+            avp_experimental_result = self.generate_vendor_avp(266, 40, 10415, '')
+            avp_experimental_result += self.generate_avp(298, 40, self.int_to_hex(5001, 4))
+            avp += self.generate_avp(297, 40, avp_experimental_result)
+            avp += self.generate_avp(1, 40, str(binascii.hexlify(username.encode()), 'ascii'))
+            response = self.generate_diameter_packet("01", "40", 301, 16777265, packet_vars['hop-by-hop-identifier'], packet_vars['end-to-end-identifier'], avp)
+            return response
+        avp += self.generate_avp(1, 40, str(binascii.hexlify(username.encode()), 'ascii'))
+        avp += self.generate_avp(268, 40, self.int_to_hex(2001, 4))
+        self.logTool.log(service='HSS', level='debug', message="[SWx] Successfully Generated SAA", redisClient=self.redisMessaging)
+        response = self.generate_diameter_packet("01", "40", 301, 16777265, packet_vars['hop-by-hop-identifier'], packet_vars['end-to-end-identifier'], avp)
+        return response
+
+
+#Multimedia Authentication Answer - SWx (MAA) - 3GPP TS 29.273
+    def Answer_16777265_303(self, packet_vars, avps):
+        self.logTool.log(service='HSS', level='debug', message=f"[diameter.py] [Answer_16777265_303] [MAA] SWx MAR received", redisClient=self.redisMessaging)
+        session_id = self.get_avp_data(avps, 263)[0]
+        try:
+            imsi_hex = self.get_avp_data(avps, 1)[0]
+            imsi = binascii.unhexlify(imsi_hex).decode('utf-8')
+        except Exception:
+            avp = ''
+            avp += self.generate_avp(263, 40, session_id)
+            avp += self.generate_avp(264, 40, self.OriginHost)
+            avp += self.generate_avp(296, 40, self.OriginRealm)
+            avp += self.generate_avp(268, 40, self.int_to_hex(5012, 4))
+            avp += self.generate_avp(277, 40, "00000001")
+            avp += self.generate_avp(260, 40, "000001024000000c" + format(int(16777265),"x").zfill(8) + "0000010a4000000c000028af")
+            return self.generate_diameter_packet("01", "40", 303, 16777265, packet_vars['hop-by-hop-identifier'], packet_vars['end-to-end-identifier'], avp)
+        self.logTool.log(service='HSS', level='debug', message=f"[diameter.py] [Answer_16777265_303] [MAA] IMSI: {imsi}", redisClient=self.redisMessaging)
+        try:
+            subscriber_details = self.database.Get_Subscriber(imsi=imsi)
+        except ValueError:
+            avp = ''
+            avp += self.generate_avp(263, 40, session_id)
+            avp += self.generate_avp(264, 40, self.OriginHost)
+            avp += self.generate_avp(296, 40, self.OriginRealm)
+            avp_experimental_result = self.generate_vendor_avp(266, 40, 10415, '') + self.generate_avp(298, 40, self.int_to_hex(5001, 4))
+            avp += self.generate_avp(297, 40, avp_experimental_result)
+            avp += self.generate_avp(277, 40, "00000001")
+            avp += self.generate_avp(1, 40, self.string_to_hex(imsi))
+            avp += self.generate_avp(260, 40, "000001024000000c" + format(int(16777265),"x").zfill(8) + "0000010a4000000c000028af")
+            return self.generate_diameter_packet("01", "40", 303, 16777265, packet_vars['hop-by-hop-identifier'], packet_vars['end-to-end-identifier'], avp)
+        except Exception:
+            self.logTool.log(service='HSS', level='error', message=f"[diameter.py] [Answer_16777265_303] [MAA] DB error: {traceback.format_exc()}", redisClient=self.redisMessaging)
+            avp = ''
+            avp += self.generate_avp(263, 40, session_id)
+            avp += self.generate_avp(264, 40, self.OriginHost)
+            avp += self.generate_avp(296, 40, self.OriginRealm)
+            avp += self.generate_avp(268, 40, self.int_to_hex(5012, 4))
+            avp += self.generate_avp(277, 40, "00000001")
+            avp += self.generate_avp(1, 40, self.string_to_hex(imsi))
+            avp += self.generate_avp(260, 40, "000001024000000c" + format(int(16777265),"x").zfill(8) + "0000010a4000000c000028af")
+            return self.generate_diameter_packet("01", "40", 303, 16777265, packet_vars['hop-by-hop-identifier'], packet_vars['end-to-end-identifier'], avp)
+        if subscriber_details.get('enabled', 1) == 0:
+            avp = ''
+            avp += self.generate_avp(263, 40, session_id)
+            avp += self.generate_avp(264, 40, self.OriginHost)
+            avp += self.generate_avp(296, 40, self.OriginRealm)
+            avp_experimental_result = self.generate_vendor_avp(266, 40, 10415, '') + self.generate_avp(298, 40, self.int_to_hex(5001, 4))
+            avp += self.generate_avp(297, 40, avp_experimental_result)
+            avp += self.generate_avp(277, 40, "00000001")
+            avp += self.generate_avp(1, 40, self.string_to_hex(imsi))
+            avp += self.generate_avp(260, 40, "000001024000000c" + format(int(16777265),"x").zfill(8) + "0000010a4000000c000028af")
+            return self.generate_diameter_packet("01", "40", 303, 16777265, packet_vars['hop-by-hop-identifier'], packet_vars['end-to-end-identifier'], avp)
+        try:
+            auc_id = subscriber_details['auc_id']
+            plmn = self.EncodePLMN(self.MCC, self.MNC)
+            vector_dict = self.database.Get_Vectors_AuC(auc_id, "air", plmn=plmn)
+            sip_auth_data = ''
+            sip_auth_data += self.generate_vendor_avp(608, "c0", 10415, self.string_to_hex("EAP-AKA"))
+            sip_auth_data += self.generate_vendor_avp(609, "c0", 10415, vector_dict['rand'] + vector_dict['autn'])
+            sip_auth_data += self.generate_vendor_avp(610, "c0", 10415, vector_dict['xres'])
+            if 'ck' in vector_dict:
+                sip_auth_data += self.generate_vendor_avp(625, "c0", 10415, vector_dict['ck'])
+            if 'ik' in vector_dict:
+                sip_auth_data += self.generate_vendor_avp(626, "c0", 10415, vector_dict['ik'])
+            avp = ''
+            avp += self.generate_avp(263, 40, session_id)
+            avp += self.generate_avp(264, 40, self.OriginHost)
+            avp += self.generate_avp(296, 40, self.OriginRealm)
+            avp += self.generate_avp(268, 40, self.int_to_hex(2001, 4))
+            avp += self.generate_avp(277, 40, "00000001")
+            avp += self.generate_avp(1, 40, self.string_to_hex(imsi))
+            avp += self.generate_vendor_avp(607, "c0", 10415, self.int_to_hex(1, 4))
+            avp += self.generate_vendor_avp(612, "c0", 10415, sip_auth_data)
+            avp += self.generate_avp(260, 40, "000001024000000c" + format(int(16777265),"x").zfill(8) + "0000010a4000000c000028af")
+            self.logTool.log(service='HSS', level='debug', message=f"[diameter.py] [Answer_16777265_303] [MAA] Successfully built MAA for IMSI: {imsi}", redisClient=self.redisMessaging)
+            return self.generate_diameter_packet("01", "40", 303, 16777265, packet_vars['hop-by-hop-identifier'], packet_vars['end-to-end-identifier'], avp)
+        except Exception:
+            self.logTool.log(service='HSS', level='error', message=f"[diameter.py] [Answer_16777265_303] [MAA] Vector error: {traceback.format_exc()}", redisClient=self.redisMessaging)
+            avp = ''
+            avp += self.generate_avp(263, 40, session_id)
+            avp += self.generate_avp(264, 40, self.OriginHost)
+            avp += self.generate_avp(296, 40, self.OriginRealm)
+            avp += self.generate_avp(268, 40, self.int_to_hex(5012, 4))
+            avp += self.generate_avp(277, 40, "00000001")
+            avp += self.generate_avp(1, 40, self.string_to_hex(imsi))
+            avp += self.generate_avp(260, 40, "000001024000000c" + format(int(16777265),"x").zfill(8) + "0000010a4000000c000028af")
+            return self.generate_diameter_packet("01", "40", 303, 16777265, packet_vars['hop-by-hop-identifier'], packet_vars['end-to-end-identifier'], avp)
+
 
     #Purge UE Answer (PUA)
     def Answer_16777251_321(self, packet_vars, avps):
@@ -2342,7 +2544,9 @@ class Diameter:
             username = self.get_avp_data(avps, 1)[0]                                                     
             username = binascii.unhexlify(username).decode('utf-8')
             self.logTool.log(service='HSS', level='debug', message="Username AVP is present, value is " + str(username), redisClient=self.redisMessaging)
-            imsi = username.split('@')[0]   #Strip Domain
+            imsi = username.split('@')[0]
+            if imsi.startswith('0') and len(imsi) == 16:
+                imsi = imsi[1:]   #Strip Domain
             domain = username.split('@')[1] #Get Domain Part
             self.logTool.log(service='HSS', level='debug', message="Extracted imsi: " + str(imsi) + " now checking backend for this IMSI", redisClient=self.redisMessaging)
             ims_subscriber_details = self.database.Get_IMS_Subscriber(imsi=imsi)
@@ -4348,105 +4552,3 @@ class Diameter:
 
         response = self.generate_diameter_packet("01", "c0", 324, 16777252, self.generate_id(4), self.generate_id(4), avp)     #Generate Diameter packet
         return response
-
-    def Answer_16777265_303(self, packet_vars, avps):
-        """SWx MAR - Multimedia Authentication Request Handler"""
-        self.logTool.log(service='HSS', level='debug', message="[diameter.py] [Answer_16777265_303] [MAR] SWx MAR received", redisClient=self.redisMessaging)
-        
-        avp = ''
-        session_id = self.get_avp_data(avps, 263)[0]
-        avp += self.generate_avp(263, 40, session_id)
-        avp += self.generate_avp(264, 40, self.OriginHost)
-        avp += self.generate_avp(296, 40, self.OriginRealm)
-        avp += self.generate_avp(277, 40, "00000001")
-        avp += self.generate_avp(260, 40, "0000010a4000000c000028af000001024000000c01000031")  # SWx App ID
-
-        try:
-            imsi = self.get_avp_data(avps, 1)[0]
-            imsi = binascii.unhexlify(imsi).decode('utf-8')
-            imsi = imsi.split('@')[0]
-            self.logTool.log(service='HSS', level='debug', message=f"[Answer_16777265_303] IMSI: {imsi}", redisClient=self.redisMessaging)
-            
-            subscriber_details = self.database.Get_Subscriber(imsi=imsi)
-            auc_id = subscriber_details['auc_id']
-            
-            # Get auth vectors
-            vectors = self.database.Get_Vectors_AuC(auc_id, "AKA")
-            self.logTool.log(service='HSS', level='debug', message=f"[Answer_16777265_303] Got vectors: {vectors}", redisClient=self.redisMessaging)
-            
-            rand = vectors['rand']
-            autn = vectors['autn']
-            xres = vectors['xres']
-            ck   = vectors['ck']
-            ik   = vectors['ik']
-
-            # SIP-Auth-Data-Item AVP (612)
-            sip_auth_data = ''
-            sip_auth_data += self.generate_vendor_avp(608, "c0", 10415, str(binascii.hexlify(b'EAP-AKA'), 'ascii'))  # SIP-Authentication-Scheme
-            sip_auth_data += self.generate_vendor_avp(609, "c0", 10415, rand + autn)  # SIP-Authenticate (RAND+AUTN)
-            sip_auth_data += self.generate_vendor_avp(610, "c0", 10415, xres)         # SIP-Authorization (XRES)
-            sip_auth_data += self.generate_vendor_avp(611, "c0", 10415, ck)           # Confidentiality-Key
-            sip_auth_data += self.generate_vendor_avp(612, "c0", 10415, ik)           # Integrity-Key (reusing 612 for IK here - actually AVP 614)
-
-            # Correct AVP codes for CK/IK
-            sip_auth_item = ''
-            sip_auth_item += self.generate_vendor_avp(608, "c0", 10415, str(binascii.hexlify(b'EAP-AKA'), 'ascii'))
-            sip_auth_item += self.generate_vendor_avp(609, "c0", 10415, rand + autn)
-            sip_auth_item += self.generate_vendor_avp(610, "c0", 10415, xres)
-            sip_auth_item += self.generate_vendor_avp(611, "c0", 10415, ck)
-            sip_auth_item += self.generate_vendor_avp(614, "c0", 10415, ik)
-
-            avp += self.generate_vendor_avp(612, "c0", 10415, sip_auth_item)  # SIP-Auth-Data-Item
-            avp += self.generate_vendor_avp(607, "c0", 10415, self.int_to_hex(1, 4))  # SIP-Number-Auth-Items
-            avp += self.generate_avp(1, 40, str(binascii.hexlify(str.encode(imsi)), 'ascii'))  # User-Name
-            avp += self.generate_avp(268, 40, self.int_to_hex(2001, 4))  # Result-Code: DIAMETER_SUCCESS
-
-            response = self.generate_diameter_packet("01", "40", 303, 16777265, packet_vars['hop-by-hop-identifier'], packet_vars['end-to-end-identifier'], avp)
-            self.logTool.log(service='HSS', level='debug', message="[Answer_16777265_303] MAA generated successfully", redisClient=self.redisMessaging)
-            return response
-
-        except Exception as e:
-            self.logTool.log(service='HSS', level='error', message=f"[Answer_16777265_303] Error: {e}", redisClient=self.redisMessaging)
-            avp_experimental_result = ''
-            avp_experimental_result += self.generate_vendor_avp(266, 40, 10415, '')
-            avp_experimental_result += self.generate_avp(298, 40, self.int_to_hex(5001, 4))
-            avp += self.generate_avp(297, 40, avp_experimental_result)
-            response = self.generate_diameter_packet("01", "40", 303, 16777265, packet_vars['hop-by-hop-identifier'], packet_vars['end-to-end-identifier'], avp)
-            return response
-
-    def Answer_16777265_301(self, packet_vars, avps):
-        """SWx SAR - Server Assignment Request Handler"""
-        self.logTool.log(service='HSS', level='debug', message="[diameter.py] [Answer_16777265_301] [SAR] SWx SAR received", redisClient=self.redisMessaging)
-        
-        avp = ''
-        session_id = self.get_avp_data(avps, 263)[0]
-        avp += self.generate_avp(263, 40, session_id)
-        avp += self.generate_avp(264, 40, self.OriginHost)
-        avp += self.generate_avp(296, 40, self.OriginRealm)
-        avp += self.generate_avp(277, 40, "00000001")
-        avp += self.generate_avp(260, 40, "0000010a4000000c000028af000001024000000c01000031")  # SWx App ID
-
-        try:
-            imsi = self.get_avp_data(avps, 1)[0]
-            imsi = binascii.unhexlify(imsi).decode('utf-8')
-            imsi = imsi.split('@')[0]
-            self.logTool.log(service='HSS', level='debug', message=f"[Answer_16777265_301] IMSI: {imsi}", redisClient=self.redisMessaging)
-
-            subscriber_details = self.database.Get_Subscriber(imsi=imsi)
-            self.logTool.log(service='HSS', level='debug', message=f"[Answer_16777265_301] Got subscriber: {imsi}", redisClient=self.redisMessaging)
-
-            avp += self.generate_avp(1, 40, str(binascii.hexlify(str.encode(imsi)), 'ascii'))  # User-Name
-            avp += self.generate_avp(268, 40, self.int_to_hex(2001, 4))  # Result-Code: DIAMETER_SUCCESS
-
-            response = self.generate_diameter_packet("01", "40", 301, 16777265, packet_vars['hop-by-hop-identifier'], packet_vars['end-to-end-identifier'], avp)
-            self.logTool.log(service='HSS', level='debug', message="[Answer_16777265_301] SAA generated successfully", redisClient=self.redisMessaging)
-            return response
-
-        except Exception as e:
-            self.logTool.log(service='HSS', level='error', message=f"[Answer_16777265_301] Error: {e}", redisClient=self.redisMessaging)
-            avp_experimental_result = ''
-            avp_experimental_result += self.generate_vendor_avp(266, 40, 10415, '')
-            avp_experimental_result += self.generate_avp(298, 40, self.int_to_hex(5001, 4))
-            avp += self.generate_avp(297, 40, avp_experimental_result)
-            response = self.generate_diameter_packet("01", "40", 301, 16777265, packet_vars['hop-by-hop-identifier'], packet_vars['end-to-end-identifier'], avp)
-            return response

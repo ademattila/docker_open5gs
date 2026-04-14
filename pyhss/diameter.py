@@ -19,7 +19,7 @@ import re
 
 class Diameter:
 
-    def __init__(self, logTool, originHost: str="hss01", originRealm: str="epc.mnc999.mcc999.3gppnetwork.org", productName: str="PyHSS", mcc: str="999", mnc: str="999", redisMessaging=None):
+    def __init__(self, logTool, originHost: str="hss01", originRealm: str="ims.mnc001.mcc286.3gppnetwork.org", productName: str="PyHSS", mcc: str="286", mnc: str="001", redisMessaging=None):
         with open("../config.yaml", 'r') as stream:
             self.config = (yaml.safe_load(stream))
 
@@ -1851,7 +1851,7 @@ class Diameter:
     def Answer_16777265_303(self, packet_vars, avps):
         self.logTool.log(service='HSS', level='debug', message="[SWx] Got MAR request", redisClient=self.redisMessaging)
 
-        # Get User-Name AVP (NAI format: 0001010000000001@nai.epc.mnc001.mcc001.3gppnetwork.org)
+        # Get User-Name AVP (NAI format: 0001010000000001@nai.epc.mnc001.mcc286.3gppnetwork.org)
         try:
             username = self.get_avp_data(avps, 1)[0]
             username = binascii.unhexlify(username).decode('utf-8')

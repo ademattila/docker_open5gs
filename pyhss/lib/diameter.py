@@ -19,7 +19,7 @@ import re
 
 class Diameter:
 
-    def __init__(self, logTool, originHost: str="hss01", originRealm: str="epc.mnc999.mcc999.3gppnetwork.org", productName: str="PyHSS", mcc: str="999", mnc: str="999", redisMessaging=None):
+    def __init__(self, logTool, originHost: str="hss01", originRealm: str="epc.mnc001.mcc286.3gppnetwork.org", productName: str="PyHSS", mcc: str="286", mnc: str="001", redisMessaging=None):
         with open("../config.yaml", 'r') as stream:
             self.config = (yaml.safe_load(stream))
 
@@ -77,6 +77,7 @@ class Diameter:
                 {"commandCode": 323, "applicationId": 16777251, "responseMethod": self.Answer_16777251_323, "failureResultCode": 5012 ,"requestAcronym": "NOR", "responseAcronym": "NOA", "requestName": "Notify Request", "responseName": "Notify Answer"},
                 {"commandCode": 324, "applicationId": 16777252, "responseMethod": self.Answer_16777252_324, "failureResultCode": 4100 ,"requestAcronym": "ECR", "responseAcronym": "ECA", "requestName": "ME Identity Check Request", "responseName": "ME Identity Check Answer"},
                 {"commandCode": 8388622, "applicationId": 16777291, "responseMethod": self.Answer_16777291_8388622, "failureResultCode": 4100 ,"requestAcronym": "LRR", "responseAcronym": "LRA", "requestName": "LCS Routing Info Request", "responseName": "LCS Routing Info Answer"},
+                {"commandCode": 303, "applicationId": 16777265, "responseMethod": self.Answer_16777265_303, "failureResultCode": 4100 ,"requestAcronym": "MAR", "responseAcronym": "MAA", "requestName": "Multimedia Authentication Request", "responseName": "Multimedia Authentication Answer"},
             ]
 
         self.diameterRequestList = [
@@ -551,7 +552,7 @@ class Diameter:
 
     def getPeerType(self, originHost: str) -> str:
         try:
-            peerTypes = ['mme', 'pgw', 'pcscf', 'icscf', 'scscf', 'hss', 'ocs', 'dra']
+            peerTypes = ['mme', 'pgw', 'pcscf', 'icscf', 'scscf', 'hss', 'ocs', 'dra', 'epdg']
 
             for peer in peerTypes:
                 if peer in originHost.lower():
@@ -563,7 +564,7 @@ class Diameter:
     def getConnectedPeersByType(self, peerType: str) -> list:
         try:
             peerType = peerType.lower()
-            peerTypes = ['mme', 'pgw', 'pcscf', 'icscf', 'scscf', 'hss', 'ocs', 'dra']
+            peerTypes = ['mme', 'pgw', 'pcscf', 'icscf', 'scscf', 'hss', 'ocs', 'dra', 'epdg']
 
             if peerType not in peerTypes:
                 return []
@@ -1851,7 +1852,7 @@ class Diameter:
     def Answer_16777265_303(self, packet_vars, avps):
         self.logTool.log(service='HSS', level='debug', message="[SWx] Got MAR request", redisClient=self.redisMessaging)
 
-        # Get User-Name AVP (NAI format: 0001010000000001@nai.epc.mnc001.mcc001.3gppnetwork.org)
+        # Get User-Name AVP (NAI format: 0001010000000001@nai.epc.mnc001.mcc286.3gppnetwork.org)
         try:
             username = self.get_avp_data(avps, 1)[0]
             username = binascii.unhexlify(username).decode('utf-8')
@@ -1892,6 +1893,15 @@ class Diameter:
             plmn = self.EncodePLMN(mcc, mnc)
 
             vector_dict = self.database.Get_Vectors_AuC(subscriber_details['auc_id'], "eap_aka", plmn=plmn)
+            print("SWX vector_dict =", vector_dict)
+            print("rand =", vector_dict.get("rand"))
+            print("autn =", vector_dict.get("autn"))
+            print("xres =", vector_dict.get("xres"))
+            print("ck =", vector_dict.get("ck"))
+            print("ik =", vector_dict.get("ik"))
+
+
+
             self.logTool.log(service='HSS', level='debug', message=f"[SWx] Generated EAP-AKA vector: RAND={vector_dict['rand']}", redisClient=self.redisMessaging)
 
             # SIP-Auth-Data-Item AVP (612) containing EAP-AKA vectors
@@ -1902,11 +1912,12 @@ class Diameter:
             # AVP 612: Integrity-Key = IK
 
             sip_auth_data = ''
+            self.logTool.log(service='HSS', level='debug', message=f'[SWx] DEBUG vector_dict keys={list(vector_dict.keys())} ck_val={vector_dict.get("ck", "MISSING")} ik_val={vector_dict.get("ik", "MISSING")} ck_len={len(str(vector_dict.get("ck", "")))} ik_len={len(str(vector_dict.get("ik", "")))}', redisClient=self.redisMessaging)
             sip_auth_data += self.generate_vendor_avp(608, "c0", 10415, str(binascii.hexlify(b'EAP-AKA'), 'ascii'))   #SIP-Authentication-Scheme
             sip_auth_data += self.generate_vendor_avp(609, "c0", 10415, vector_dict['rand'] + vector_dict['autn'])     #SIP-Authenticate (RAND+AUTN)
             sip_auth_data += self.generate_vendor_avp(610, "c0", 10415, vector_dict['xres'])                           #SIP-Authorization (XRES)
-            sip_auth_data += self.generate_vendor_avp(625, "c0", 10415, vector_dict['ck'])                            #Confidentiality-Key (CK)
-            sip_auth_data += self.generate_vendor_avp(626, "c0", 10415, vector_dict['ik'])                             #Integrity-Key (IK)
+            sip_auth_data += self.generate_vendor_avp(625, "c0", 10415, vector_dict["ck"])                            #Confidentiality-Key (CK)
+            sip_auth_data += self.generate_vendor_avp(626, "c0", 10415, vector_dict["ik"])                             #Integrity-Key (IK)
 
             avp += self.generate_vendor_avp(612, "c0", 10415, sip_auth_data)                                           #SIP-Auth-Data-Item
             avp += self.generate_vendor_avp(607, "c0", 10415, self.int_to_hex(1, 4))                                   #SIP-Number-Auth-Items
@@ -1960,7 +1971,6 @@ class Diameter:
         response = self.generate_diameter_packet("01", "40", 301, 16777265, packet_vars['hop-by-hop-identifier'], packet_vars['end-to-end-identifier'], avp)
         return response
 
-    #Purge UE Answer (PUA)
     def Answer_16777251_321(self, packet_vars, avps):
         
         imsi = self.get_avp_data(avps, 1)[0]                                                             #Get IMSI from User-Name AVP in request
@@ -3726,6 +3736,7 @@ class Diameter:
         avp += self.generate_avp(269, "00", self.ProductName)                                                   #Product-Name
         avp += self.generate_avp(260, 40, "000001024000000c01000023" +  "0000010a4000000c000028af")      #Vendor-Specific-Application-ID (S6a)
         avp += self.generate_avp(260, 40, "000001024000000c01000016" +  "0000010a4000000c000028af")      #Vendor-Specific-Application-ID (Gx)
+        avp += self.generate_avp(260, 40, "000001024000000c" + format(int(16777265),"x").zfill(8) +  "0000010a4000000c000028af")      #Vendor-Specific-Application-ID (SWx)
         avp += self.generate_avp(260, 40, "000001024000000c01000027" +  "0000010a4000000c000028af")      #Vendor-Specific-Application-ID (SLg)
         avp += self.generate_avp(260, 40, "000001024000000c" + format(int(16777217),"x").zfill(8) +  "0000010a4000000c000028af")      #Vendor-Specific-Application-ID (Sh)
         avp += self.generate_avp(260, 40, "000001024000000c" + format(int(16777216),"x").zfill(8) +  "0000010a4000000c000028af")      #Vendor-Specific-Application-ID (Cx)

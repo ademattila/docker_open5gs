@@ -65,6 +65,9 @@ sed -i 's|INSTALL_PREFIX|'$INSTALL_PREFIX'|g' ./config.yaml
 #ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 redis-server --daemonize yes
+cp /mnt/pyhss/lib/diameter.py /pyhss/lib/diameter.py
+cp /mnt/pyhss/lib/database.py /pyhss/lib/database.py
+cp /mnt/pyhss/lib/milenage.py /pyhss/lib/milenage.py
 
 cd services
 python3 apiService.py &

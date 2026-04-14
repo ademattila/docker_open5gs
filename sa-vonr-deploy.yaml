@@ -315,6 +315,9 @@ services:
       - /etc/localtime:/etc/localtime:ro
     expose:
       - "53/udp"
+    ports:
+      - "0.0.0.0:53:53/udp"
+      - "0.0.0.0:53:53/tcp"
     networks:
       default:
         ipv4_address: ${DNS_IP}
