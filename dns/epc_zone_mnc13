@@ -1,0 +1,17 @@
+$ORIGIN epc.mnc13.mcc286.3gppnetwork.org.
+$TTL 1W
+@                       1D IN SOA       localhost. root.localhost. (
+                                        2               ; serial (bir artırdık)
+                                        3H              ; refresh
+                                        15M             ; retry
+                                        1W              ; expiry
+                                        1D )            ; minimum
+
+                        1D IN NS        epcns.epc.mnc013.mcc286.3gppnetwork.org.
+epcns                   1D IN A         DNS_IP_ADRESIN
+
+pcrf                    1D IN A         PCRF_IP_ADRESIN
+aaa                     1D IN A         OSMOEPDG_IP_ADRESIN
+epdg                    1D IN A         46.62.140.156
+
+epdg.epc.mnc13.mcc286.3gppnetwork.org.  1D IN A  46.62.140.156
